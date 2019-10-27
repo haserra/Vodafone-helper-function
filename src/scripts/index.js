@@ -27,15 +27,14 @@ let data = [
   },
   {
     state: "processing",
-    errorCode: "NO_STOCK"
-  },
-  {
-    state: "processing",
-    errorCode: "NO_STOCK"
-  },
-  {
-    state: "processing",
     errorCode: "INCORRECT_DETAILS"
+  },
+  {
+    state: "processing"
+  },
+  {
+    state: "error",
+    errorCode: "NO_STOCK"
   },
   {
     state: "success",
@@ -48,6 +47,15 @@ let data = [
   {
     state: "processing",
     errorCode: "NO_STOCK"
+  }
+];
+
+let data01 = [
+  {
+    state: "processing"
+  },
+  {
+    state: "error"
   }
 ];
 
@@ -75,6 +83,8 @@ let data03 = [
   }
 ];
 
+let data04 = [];
+
 function delay(delayInms) {
   return new Promise(resolve => {
     setTimeout(() => {
@@ -85,15 +95,15 @@ function delay(delayInms) {
 
 function getProcessingPage(data) {
   return new Promise((resolve, reject) => {
-    let mockProcessing = Promise.resolve("immediately");
+    let mockProcessing = Promise.resolve(0);
     let output = {};
 
     for (let i = 0; i < data.length; i++) {
       if (data[i].state === "processing") {
-        // delay by 2 seconds, ie, waits the Promise (returned by the function deley), resolves 2 seconds
+        // delay by 2 seconds, ie, waits the Promise (returned by the function delay), resolves 2 seconds
         mockProcessing = delay(2000 * (i + 1));
       } else if (data[i].state === "error") {
-        //
+        // handle the error code provided
         mockProcessing.then(function(values) {
           if (data[i].errorCode === "NO_STOCK") {
             output.title = "Error page";
@@ -115,7 +125,7 @@ function getProcessingPage(data) {
         });
         break;
       } else if (data[i].state === "success") {
-        //
+        // return from the helper
         mockProcessing.then(function(values) {
           output.title = "order complete";
           output.message = null;
@@ -130,9 +140,14 @@ function getProcessingPage(data) {
       }
     }
     if (output.title === undefined || output.message === undefined) {
+      // if never occurred an error or a success (forever processing)
+      let noResults = {};
       mockProcessing.then(values => {
-        console.log(`I've been waiting for ${values / 1000} seconds.`);
-        resolve(values);
+        console.log(
+          `Helper spent ${values / 1000} seconds to determine the output.`
+        );
+        noResults.waiting = `${values / 1000} seconds`;
+        resolve(noResults);
       });
     }
   });
@@ -147,6 +162,18 @@ vodafoneResult.then(result => {
   outputResult.innerHTML = `{ title: '${result.title}', message: '${result.message}' }`;
   // the result is also logged on the console
   console.log(
-    `Object returned: \n { title: '${result.title}', message: ${result.message} } \n And I've been waiting for ${result.waiting}.`
+    `Object returned: \n { title: '${result.title}', message: ${result.message} } \n And the Helper spent ${result.waiting} to determine the output.`
   );
+  let runTask = document.querySelector("#run-task");
+  if (!runTask) {
+    runTask = document.createElement("input");
+    runTask.setAttribute("name", "run_task");
+    runTask.setAttribute("type", "button");
+    runTask.setAttribute("value", "Run Task");
+    runTask.textContent = "Run Task";
+    runTask.addEventListener("click", function() {
+      window.location.reload();
+    });
+    document.body.appendChild(runTask);
+  }
 });
